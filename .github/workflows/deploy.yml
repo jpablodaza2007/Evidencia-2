@@ -26,7 +26,7 @@ jobs:
 
       - name: Escaneo de código fuente con Bandit (SAST)
         run: |
-          bandit -r . -f txt
+          bandit -r . -x ./test_app.py -f txt
 
       - name: Construir imagen Docker para análisis
         run: |

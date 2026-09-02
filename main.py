@@ -29,5 +29,8 @@ def db_check():
   return jsonify({"db_status": "connected"}), 200
 
 
-if __name__ == "__main__":
-  app.run(host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+  app.run(
+      host=os.environ.get('FLASK_HOST', '127.0.0.1'),
+      port=int(os.environ.get('FLASK_PORT', 5000)),
+  )
