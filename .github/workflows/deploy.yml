@@ -1,31 +1,51 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline con DevSecOps
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  test:
+  security-and-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python
+
+      - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      - name: Install dependencies
+
+      - name: Instalar dependencias
         run: |
           pip install -r requirements.txt
-      - name: Run Pytest
+          pip install bandit
+
+      - name: Pruebas Unitarias con Pytest
         run: |
           pytest test_app.py
 
+      - name: Escaneo de código fuente con Bandit (SAST)
+        run: |
+          bandit -r . -f txt
+
+      - name: Construir imagen Docker para análisis
+        run: |
+          docker build -t app-flask:test .
+
+      - name: Escaneo de vulnerabilidades en Imagen con Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'app-flask:test'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'
+
   deploy:
-    needs: test
+    needs: security-and-tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Deploy to EC2
+      - name: Desplegar en la EC2 vía SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -34,4 +54,4 @@ jobs:
           script: |
             cd ~/app
             git pull origin main
-            docker compose up -d --build
+            docker compose up -d
